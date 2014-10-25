@@ -1,0 +1,69 @@
+---
+title: "Coursera Assignment-PML"
+author: "Helen-R"
+date: "Monday, October 25, 2014"
+output:
+  html_document: default
+---
+## A. Load the dataset:
+```{r LoadDataset, cache=TRUE}
+library(caret); library(randomForest); library(rattle); library(doSNOW);
+registerDoSNOW(makeCluster(2, type = "SOCK"))
+setwd("D:/Data Analysis/R/ML/Pj-dumbell")
+
+url_tr <- "D:/Data Analysis/R/ML/Pj-dumbell/pml-training.csv"
+url_te <- "D:/Data Analysis/R/ML/Pj-dumbell/pml-testing.csv"
+tr <- read.csv(url_tr, fileEncoding = 'UTF-8')
+te <- read.csv(url_te, fileEncoding = 'UTF-8')
+```
+The dumbbell lifting quality test is performed by 6 male participants between 20-28 year-old. [ref.1][01]    
+There are:    
+- `r dim(tr)[2]` variables (= features, predictors, characteristics),    
+- `r dim(tr)[1]` observations in the training set,    
+- `r dim(te)[1]` sets for testing.    
+    
+### Tidy the dataset
+Among `r dim(tr)[2]` variables:    
+Variables 1~7 indicate the participants, time stamps, and activities (window, num).    
+```{r var1to7, echo=FALSE, cache=TRUE}
+names(tr)[1:7]
+```
+### Omit NAs and blanks: 52 features left, and column "classe"" is the outcome
+**Subsetting the data:** ignore columns of NA and blank, and column X.    
+1. locations: belt/arm/forearm/dumbbell    
+2. Each location has 13 variables:     
+- 3 variables from roll/pitch/yaw (Euler angle)     
+- 3 variables from [gyro] x/y/z       
+- 4 variables from [accel] x/y/z/total        
+- 3 variables from [magnet] x/y/z     
+```{r var_analysis, cache=TRUE}
+train_raw <- tr[, c(2:11, 37:49, 60:68, 84:86, 102, 113:124, 140, 151:160)]
+test_raw <- te[, c(2:11, 37:49, 60:68, 84:86, 102, 113:124, 140, 151:160)]
+```
+**Data slicing**    
+Training vs. cross-validation is **"60:40"**    
+```{r features, cache=TRUE}
+set.seed(151)
+inTrain <- createDataPartition(y=train_raw$classe, p = 0.6, list=F)
+tr_set <- train_raw[inTrain,]
+tr_cv <- train_raw[-inTrain,]
+```
+## B. Data training & cross-validation    
+```{r train, cache=TRUE}
+set.seed(234)
+rFraw <- randomForest(tr_set[,7:58], y = tr_set$classe, xtest=tr_cv[,7:58], ytest=tr_cv$classe, ntree=1000, keep.forest=T)
+```
+### Show confusion matrix and error rate    
+```{r confMx, echo=FALSE, cache=TRUE}
+rFraw
+plot(rFraw)
+```
+                        
+## C. Predicting    
+### According to the above random forest, the prediction to the test set is as follow:    
+```{r prediction, cache=TRUE}
+pred <- predict(rFraw, test_raw[,7:58])
+pred
+```
+
+[01]: http://groupware.les.inf.puc-rio.br/har
