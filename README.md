@@ -1,7 +1,7 @@
 pML
 ===
 
-Practical Machine Learning on Coursera    
+Practical Machine Learning on Coursera.    
 This is the assignment project from pML class on Coursera.    
 
 Please go to the direct html link:    
